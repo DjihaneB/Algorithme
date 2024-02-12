@@ -1,79 +1,85 @@
-// Importer prompt.js (si besoin)
-import { prompt } from './prompt.js';
+import { prompt } from "./prompt.js";
 
-// Fonction pour ajouter un caractère spécial
-function carSpec() {
-    let caracteresSpeciaux = "!@#$%^&*()";
-    let caractereAleatoire = caracteresSpeciaux[Math.floor(Math.random() * caracteresSpeciaux.length)];
-    return caractereAleatoire;
+function askPasswordLength() {
+    let length = Number(prompt("🔢 Combien de caractères ? (8-36)\n"));
+
+    if (isNaN(length) || length < 8 || length > 36) {
+        throw new Error("La longueur du mot de passe doit être comprise entre 8 et 36 caractères.");
+    }
+    return length;
 }
 
-// Fonction pour ajouter un chiffre
-function chiffre() {
-    let chiffreAleatoire = Math.floor(Math.random() * 10); // Chiffres de 0 à 9
-    return chiffreAleatoire.toString(); // Convertir en chaîne de caractères
+function askSpecialChars() {
+    let special = prompt("🔣 Caractères spéciaux ? (y/n)\n");
+    if (special !== 'y' && special !== 'n') {
+        throw new Error("Veuillez répondre par 'y' pour oui ou 'n' pour non.");
+    }
+    return special === "y";
 }
 
-// Fonction pour ajouter une majuscule
-function majuscules() {
-    let caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // Toutes les lettres majuscules
-    let caractereAleatoire = caracteres[Math.floor(Math.random() * caracteres.length)];
-    return caractereAleatoire;
+function askNumber() {
+    let number = prompt("🔢 Chiffres ? (y/n)\n");
+    if (number !== 'y' && number !== 'n') {
+        throw new Error('Veuillez répondre par "y" pour oui ou "n" pour non.');
+    }
+    return number === 'y';
 }
 
-// Fonction pour ajouter une lettre minuscule
-function minuscules() {
-    let caracteres = 'abcdefghijklmnopqrstuvwxyz'; // Toutes les lettres minuscules
-    let caractereAleatoire = caracteres[Math.floor(Math.random() * caracteres.length)];
-    return caractereAleatoire;
+function askUppercase() {
+    let uppercase = prompt("⬆️ Majuscules ? (y/n)\n");
+    if (uppercase !== 'y' && uppercase !== 'n') {
+        throw new Error('Veuillez répondre par "y" pour oui ou "n" pour non.');
+    }
+    return uppercase === "y";
 }
 
-let fonctions = [minuscules];
+const LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+const UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const SPECIALCHARS = "!\"#$%&'()*+,-./:;<=>?@[]";
+const NUMBERS = "1234567890"; // Ajout du chiffre 0 pour inclure tous les chiffres de 0 à 9
 
-// Demander le nombre de caractères
-let numberOfChar = parseInt(prompt("Combien de caractères ? (8-36)\n"));
+function generatePassword(length, special, number, uppercase) {
+    let charset = LOWERCASE;
+    if (special) { charset += SPECIALCHARS; }
+    if (number) { charset += NUMBERS; }
+    if (uppercase) { charset += UPPERCASE; }
 
-const test = (numberOfChar) => {
-    try {
-        if (numberOfChar < 8 || numberOfChar > 36 || isNaN(numberOfChar)) {
-            throw new Error(' Le nombre de caractère doit être compris entre 8 et 36');
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        let randomIndex = Math.floor(Math.random() * charset.length);
+        password += charset[randomIndex];
+    }
+
+    if (number && !/\d/.test(password)) {
+        password = generatePassword(length, special, number, uppercase);
+    }
+
+    if (uppercase && password.toLowerCase() === password) {
+        console.log('password', password);
+        return generatePassword(length, special, number, uppercase);
+    }
+    return password;
+}
+
+function main() {
+    let length = null;
+    let number = null;
+    let special = null;
+    let uppercase = null;
+
+    while (length === null || number === null || special === null || uppercase === null) {
+        try {
+            if (length === null) { length = askPasswordLength(); }
+            if (number === null) { number = askNumber(); }
+            if (special === null) { special = askSpecialChars(); }
+            if (uppercase === null) { uppercase = askUppercase(); }
+        } catch (error) {
+            console.error(error.message);
         }
-    } catch (error) {
-        console.log("Erreur : ", error.message);
-        numberOfChar = parseInt(prompt('Reessayez : combien de caractères ? (8-36)\n'));
-        test(numberOfChar);
     }
-};
-test(numberOfChar);
 
-//Créer un tableau avec le nombre de caractères demandé, initialisé à "-"
-let passWord = new Array(numberOfChar).fill("-");
-
-// Demander Caractères spéciaux 
-let charSpc = prompt("Caractères spéciaux ? (y/n)\n");
-if ((charSpc == "y") || (charSpc == "Y")) {
-    fonctions.push(carSpec);
+    const password = generatePassword(length, special, number, uppercase);
+    console.log("Le mot de passe généré:  ", password);
 }
 
-// Demander Chiffres
-let chiffres = prompt("Chiffres ? (y/n)\n");
-if ((chiffres == "y") || (chiffres == "Y")) {
-    fonctions.push(chiffre);
-}
-
-// Demander Majuscules
-let maj = prompt("Majuscules ? (y/n)\n");
-if ((maj == "y") || (maj == "Y")) {
-    fonctions.push(majuscules);
-}
-
-// Utiliser les fonctions pour remplir le mot de passe
-for (let i = 0; i < passWord.length; i++) {
-    let fonctionAleatoire = fonctions[Math.floor(Math.random() * fonctions.length)];
-    if (passWord[i] === "-") {
-        passWord[i] = fonctionAleatoire();
-    }
-}
-
-// Afficher le mot de passe généré
-console.log("Mot de passe généré :", passWord.join('')); // join pour concaténer les éléments du tableau en une seule chaîne
+main();
